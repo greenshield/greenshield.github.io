@@ -227,7 +227,7 @@
             document.getElementById('sign').onclick = function() {
 
                 if (document.getElementById('hashValue').value.trim().length > 0) {
-                    signIt(document.getElementById('output').value.trim()+'\r\n\r\n'+'md5 hash of public key of original intended recipient of this signed message:'+'\r\n'+document.getElementById('hashValue').value+'\r\n');
+                    signIt(document.getElementById('output').value.trim()+'\r\n\r\n'+'SHA-256 hash of public key of original intended recipient of this signed message:'+'\r\n'+document.getElementById('hashValue').value+'\r\n');
                 } else {
                     signIt(document.getElementById('output').value.trim());
                 }
