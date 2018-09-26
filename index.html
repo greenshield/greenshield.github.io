@@ -133,9 +133,6 @@
 
         const encryptDecryptPublicFunction = async (message, callback) => {
 
-            const privKeyObj = (await openpgp.key.readArmored(document.getElementById('privkey').value)).keys[0]
-            await privKeyObj.decrypt(document.getElementById('passphrase').value)
-
             const options = {
                 message: openpgp.message.fromText(message),
                 publicKeys: (await openpgp.key.readArmored(document.getElementById('pubkey').value)).keys
@@ -349,7 +346,7 @@
     <br />
     <strong>Decrypt a message</strong>
     <br />
-    1.) Ensure that both the public key and private key fields contain valid keys. These values will be automatically populated for you after you generate a new key pair, but if you want to use an existing key pair you have previously generated just populate the public key and private key fields manually with the keys you previously saved.
+    1.) Ensure that the private key field contains your private key. This values will be automatically populated for you after you generate a new key pair, but if you want to use an existing key pair you have previously generated just populate the private key field manually with the private key you previously saved.
     <br />
     2.) Ensure that the passphrase box contains the passphrase associated with the private key you are using. This is the passphrase you chose when generating the key pair.
     <br />
