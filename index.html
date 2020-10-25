@@ -5,7 +5,14 @@
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=.75, maximum-scale=1">
-    
+
+    <style type="text/css">
+    body, textarea, input  {
+      background-color: #000;
+      color: #7d7d7d
+    }
+    </style>
+
     <script type="text/javascript">
         var passphrase = '';
 
@@ -24,7 +31,7 @@
 
             var options = {
                 userIds: uids,
-                numBits: 4096,
+                numBits: document.getElementById('bits').value,
                 passphrase: document.getElementById('passphrase').value
             };
 
@@ -37,7 +44,7 @@
             });
         }
 
-        function signIt(message, useKey) {
+        function signIt(message, detached) {
             var options, cleartext, validity;
 
 
@@ -49,18 +56,14 @@
 
                     var opts = {
                         message: openpgp.cleartext.fromText(message),
-                        privateKeys: [keyArm.keys[0]]
+                        privateKeys: [keyArm.keys[0]],
+                        detached: detached ? true : false
                     };
 
                     openpgp.sign(opts).then(function(signed) {
-                        cleartext = signed.data;
-                        document.getElementById('output').value = cleartext.trim();
+                        cleartext = signed.signature;
 
-                        if (useKey) {
-                            var mes = useKey;
-                        } else {
-                            var mes = cleartext;
-                        }
+                        document.getElementById('signature').value = cleartext.trim();
 
                     });
 
@@ -83,8 +86,7 @@
                     options.publicKeys = pubkeyArm.keys;
 
                     openpgp.verify(options).then(function(verified) {
-                        validity = verified.signatures[0].valid;
-                        window.sign = verified.signatures[0];
+                        validity = verified.signatures[0].valid;                        
                         if (validity) {
                             document.getElementById('output').value = 'signed by key id ' + verified.signatures[0].keyid.toHex()+'\r\n\r\n'+'original message:'+'\r\n'+message.text;
                         } else {
@@ -127,7 +129,7 @@
 
             openpgp.encrypt(options).then(ciphertext => {
                 encrypted = ciphertext.data
-                callback(encrypted);
+                callback(encrypted);                
             })
 
         }
@@ -191,8 +193,49 @@
             }
 
             openpgp.decrypt(options).then(plaintext => {
-                callback(plaintext.data)
+
+              validity = plaintext.signatures[0].valid;                        
+                        if (validity) {
+                            document.getElementById('output').value = 'signed by key id ' + plaintext.signatures[0].keyid.toHex()+'\r\n\r\n'+'original message:'+'\r\n'+plaintext.data;
+                        } else if (document.getElementById('pubkey').value.length) {
+                          document.getElementById('output').value = 'bad signature'+'\r\n\r\n'+'original message:'+'\r\n'+plaintext.data;
+                            return false;
+                        } else {
+                          document.getElementById('output').value = 'no signature'+'\r\n\r\n'+'original message:'+'\r\n'+plaintext.data;
+                            return false;
+                        }
+
             })
+
+        }
+
+        const verifySig = async () => {
+       
+          const verified = await openpgp.verify({
+        message: openpgp.cleartext.fromText(document.getElementById('output').value),              // CleartextMessage or Message object
+        signature: await openpgp.signature.readArmored(document.getElementById('signature').value), // parse detached signature
+        publicKeys: (await openpgp.key.readArmored(document.getElementById('pubkey').value)).keys // for verification
+    });
+    const { valid } = verified.signatures[0];
+    if (valid) {
+
+
+      var pk = await openpgp.key.readArmored(document.getElementById('pubkey').value)
+
+      var pk_id = pk.keys[0].keyPacket.keyid.toHex()
+
+      var match =  'does not match'
+      if (pk_id === verified.signatures[0].keyid.toHex()) {
+        match = 'matches'
+      }
+
+                            document.getElementById('output').value = 'signed by key id ' + verified.signatures[0].keyid.toHex()+'\r\n\r\n'+'public key ' + match+'\r\n\r\n'+'original message:'+'\r\n'+document.getElementById('output').value
+                            
+                            
+                        } else {
+                          document.getElementById('output').value = 'bad signature'+'\r\n\r\n'+'original message:'+'\r\n'+document.getElementById('output').value;
+                            return false;
+                        }
 
         }
 
@@ -235,8 +278,22 @@
                 
             };
 
+            document.getElementById('signdetached').onclick = function() {
+
+if (document.getElementById('hashValue').value.trim().length > 0) {
+    signIt(document.getElementById('output').value.trim()+'\r\n\r\n'+'SHA-256 hash of public key of original intended recipient of this signed message:'+'\r\n'+document.getElementById('hashValue').value+'\r\n');
+} else {
+    signIt(document.getElementById('output').value.trim(),true);
+}
+
+};
+
             document.getElementById('verify').onclick = function() {
                 verifyIt(document.getElementById('output').value.trim());
+            };
+
+            document.getElementById('verifysignature').onclick = function() {
+                verifySig();
             };
 
         }
@@ -260,14 +317,22 @@
     <textarea cols="50" rows="10" id="output" placeholder="message to encrypt or decrypt"></textarea>
     <br />
     <br />
+    <textarea cols="50" rows="10" id="signature" placeholder="signature"></textarea>
+    <br />
+    <br />
     <textarea cols="50" rows="10" id="hashInput"" placeholder="value you want to hash"></textarea>
     <br />
     <input id="hashValue" type="text" placeholder="hashed value of public key" value="" size="50" />
     <br />
     <br />
+    <input id="bits" type="text" placeholder="bits" value="2048" size="4" />
+    <br />
+    <br />
     <button type="button" id="genKey">Generate Keys</button>
     <button type="button" id="sign">Sign</button>
+    <button type="button" id="signdetached">Sign Detached</button>
     <button type="button" id="verify">Verify</button>
+    <button type="button" id="verifysignature">Verify Detached</button>
     <button type="button" id="hash">Create Hash</button>
     <button type="button" id="encryptPublic">Encrypt Public</button>
     <button type="button" id="decryptPublic">Decrypt Public</button>
