@@ -260,8 +260,29 @@
                 decryptPublic(document.getElementById('output').value);
             };
 
-            document.getElementById('hash').onclick = function() {        
+            document.getElementById('hash').onclick = async function() {        
                 document.getElementById('hashValue').value = sha256(document.getElementById('hashInput').value.trim());
+
+
+                var pk = await openpgp.key.readArmored(document.getElementById('hashInput').value)
+
+var pk_id = pk.keys[0].keyPacket.keyid.toHex()
+
+
+document.getElementById('keyid').value = pk_id
+
+            };
+
+            document.getElementById('key').onclick = async function() {        
+
+
+                var pk = await openpgp.key.readArmored(document.getElementById('pubkey').value)
+
+var pk_id = pk.keys[0].keyPacket.keyid.toHex()
+
+
+document.getElementById('keyid').value = pk_id
+
             };
 
             document.getElementById('genKey').onclick = function() {
@@ -324,6 +345,8 @@ if (document.getElementById('hashValue').value.trim().length > 0) {
     <br />
     <input id="hashValue" type="text" placeholder="hashed value of public key" value="" size="50" />
     <br />
+    <input id="keyid" type="text" placeholder="hashed value of public key id" value="" size="50" />
+    <br />
     <br />
     <input id="bits" type="text" placeholder="bits" value="2048" size="4" />
     <br />
@@ -334,6 +357,7 @@ if (document.getElementById('hashValue').value.trim().length > 0) {
     <button type="button" id="verify">Verify</button>
     <button type="button" id="verifysignature">Verify Detached</button>
     <button type="button" id="hash">Create Hash</button>
+    <button type="button" id="key">Extract Key</button>
     <button type="button" id="encryptPublic">Encrypt Public</button>
     <button type="button" id="decryptPublic">Decrypt Public</button>
     <button type="button" id="encrypt">Encrypt Signed</button>
