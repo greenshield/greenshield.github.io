@@ -61,9 +61,20 @@
                     };
 
                     openpgp.sign(opts).then(function(signed) {
+
+
                         cleartext = signed.signature;
 
+                        if (cleartext) {
+
                         document.getElementById('signature').value = cleartext.trim();
+
+                        }
+
+                        if (signed.data) {
+                        document.getElementById('output').value = signed.data;
+                        }
+
 
                     });
 
